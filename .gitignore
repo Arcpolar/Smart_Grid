@@ -4,3 +4,23 @@ archive.zip
 archive
 housekWh.csv
 .ipynb_checkpoints/Data Segmentation-checkpoint.ipynb
+__pycache__/format_data.cpython-311.pyc
+.idea/vcs.xml
+.idea/Smart_Grid.iml
+.idea/modules.xml
+.idea/misc.xml
+.idea/inspectionProfiles/profiles_settings.xml
+*.parquet
+grid_info_processor.log
+data/train2.csv
+data/train1.csv
+data/train.csv
+data/test.csv
+data/train2.csv
+data/train1.csv
+data/train.csv
+data/test.csv
+data/train2.csv
+data/train1.csv
+data/train.csv
+data/test.csv
