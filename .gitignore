@@ -24,3 +24,6 @@ data/train2.csv
 data/train1.csv
 data/train.csv
 data/test.csv
+*.log
+.ipynb_checkpoints
+Chris\.ipynb_checkpoints
