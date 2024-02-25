@@ -27,3 +27,5 @@ data/test.csv
 *.log
 .ipynb_checkpoints
 Chris\.ipynb_checkpoints
+Chris/data/housekWh.csv.gz
+Chris/data.zip
