@@ -63,26 +63,59 @@ class GridInfoProcessor:
         except Exception as e:
             self.logger.error(f"Critical Error: {e}")
 
+    def process_S3(self):
+        
+        housekey = 's3://{}/{}'.format(self.data_folder, 'housekWh.csv')
+    
+        try:
+            # load CSV file to data frame meterconsuptiondata
+            self.meterconsumptiondata = pd.read_csv(housekey,
+                                                    index_col='tstp', parse_dates=True)
+    
+            # load weather infomation
+            #self.weather_hourly_darksky = pd.read_csv(os.path.join(self.archive_folder, 'weather_hourly_darksky.csv'),
+                                                     # index_col='time', parse_dates=True)
+    
+            # load uk_bank_holidays.csv
+            #self.dfholiday = pd.read_csv(os.path.join(self.archive_folder, 'uk_bank_holidays.csv'))
+    
+            
+            return self.meterconsumptiondata
+        except OSError as e:
+            self.logger.error(f"Critical File Error: {e}")
+        except Exception as e:
+            self.logger.error(f"Critical Error: {e}")
+            
+    
     def process_data(self):
 
-        self.logger.info('Starting Data Processing: ' + str(file))
+        self.logger.info('Starting Data Processing: ')
+        self.logger.info('Processing: housekWh')
         
         # Take average of all meters to hourly interval
         houseAVG = self.meterconsumptiondata.mean(axis=1).to_frame()
         houseAVG.columns = ['kWh']
+        
+        self.logger.info('Processing: weather_hourly_darksky')
 
         # only take temperature data from weather data
         temperaturedata = self.weather_hourly_darksky['temperature']
+
+        self.logger.info('Processing: uk_bank_holidays')
 
         # set the time
         self.dfholiday['Bank holidays'] = pd.to_datetime(self.dfholiday['Bank holidays'])
         # change columns name
         self.dfholiday = self.dfholiday.rename(columns={'Bank holidays': 'date', 'Type': 'Holiday'})
-
+        
+        self.logger.info('Label encoding: uk_bank_holidays')
+        
         # using LabelEncoder() to change to digit
         calendarencoder = preprocessing.LabelEncoder()
         self.dfholiday['Holiday'] = calendarencoder.fit_transform(self.dfholiday['Holiday'])
 
+        self.logger.info('Combining Datasets')
+        
         # Use previouse processed average data
         meterdataset = houseAVG.copy()
         # Add new time columns date, weekday, hour
@@ -95,9 +128,13 @@ class GridInfoProcessor:
         # add holiday information
         meterdataset = meterdataset.merge(self.dfholiday, on='date', how='left')
 
+        self.logger.info('Setting Parquet Partitions')
+
         # for parquet use
         meterdataset['year'] = pd.DatetimeIndex(meterdataset['date']).year
         meterdataset['month'] = pd.DatetimeIndex(meterdataset['date']).month
+
+        self.logger.info('Dropping Empty Rows and non-useful columns')
 
         # drop date column
         meterdataset = meterdataset.drop('date', axis=1)
@@ -114,6 +151,7 @@ class GridInfoProcessor:
         return self.meterdataset
 
     def send_to_parquet(self):
+        self.logger.info('Sending to Parquet Folder: ' + str(self.output_folder))
         self.meterdataset.to_parquet(os.path.join(self.output_folder, 'meterdataset.parquet'),
                                      compression='None', partition_cols=["year", "month"])
 
@@ -129,6 +167,8 @@ if __name__ == "__main__":
 
     # Process the directory
     processor.process_directory()
+    
+    processor.process_data()
 
     processor.send_to_parquet()
 
