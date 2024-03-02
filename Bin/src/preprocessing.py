@@ -1,6 +1,17 @@
 import os
 import pandas as pd
 from sklearn import preprocessing
+import argparse
+import os
+import requests
+import tempfile
+
+import numpy as np
+
+from sklearn.compose import ColumnTransformer
+from sklearn.impute import SimpleImputer
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
 
 def load_and_process_weather_data(datapath):
     weather_hourly_darksky = pd.read_csv(os.path.join(datapath, 'weather_hourly_darksky.csv'), index_col='time', parse_dates=True)
@@ -52,7 +63,7 @@ if __name__ == "__main__":
     dfholiday = load_and_process_holiday_data(os.path.join(base_dir, "holidays"))
 
     # Load energy data
-    df = pd.read_csv(os.path.join(base_dir, 'dataT', 'dataT.csv'), index_col='time', parse_dates=True)
+    df = pd.read_csv(os.path.join(base_dir, 'dataT', 'dataT.csv'), index_col='tstp', parse_dates=True)
 
     houseAVG = process_energy_data(df)
     meterdataset = merge_data(houseAVG, temperaturedata, dfholiday)
@@ -63,6 +74,6 @@ if __name__ == "__main__":
     # Save processed data
     output_dir = os.path.join(base_dir, 'output')
     os.makedirs(output_dir, exist_ok=True)
-    traindata.to_csv(os.path.join(output_dir, 'train_data.csv'))
-    validationdata.to_csv(os.path.join(output_dir, 'validation_data.csv'))
-    testdata.to_csv(os.path.join(output_dir, 'test_data.csv'))
+    pd.DataFrame(traindata).to_csv(f"{base_dir}/train/train_data.csv", header=False, index=False)
+    pd.DataFrame(validationdata).to_csv(f"{base_dir}/validation/validation.csv", header=False, index=False)
+    pd.DataFrame(testdata).to_csv(f"{base_dir}/test/test.csv", header=False, index=False)
