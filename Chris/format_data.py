@@ -63,22 +63,34 @@ class GridInfoProcessor:
         except Exception as e:
             self.logger.error(f"Critical Error: {e}")
 
-    def process_S3(self):
+    #Incomplete        
+    def process_S3(self, s3boto, bucket, chunksize=5000):
         
-        housekey = 's3://{}/{}'.format(self.data_folder, 'housekWh.csv')
-    
+        self.logger.info('Starting file download from bucket: ' + str(bucket))
+        self.logger.info('folder: ' + str(self.data_folder))
+        self.logger.info('file: ' + str(housekWh.csv.gz))
+        s3boto.meta.client.download_file(bucket, self.data_folder, 'housekWh.csv.gz')
+        s3boto.meta.client.download_file(bucket, self.archive_folder, 'uk_bank_holidays.csv')
+        s3boto.meta.client.download_file(bucket, self.archive_folder, 'weather_hourly_darksky.csv')
+
         try:
-            # load CSV file to data frame meterconsuptiondata
-            self.meterconsumptiondata = pd.read_csv(housekey,
-                                                    index_col='tstp', parse_dates=True)
-    
+            
             # load weather infomation
-            #self.weather_hourly_darksky = pd.read_csv(os.path.join(self.archive_folder, 'weather_hourly_darksky.csv'),
-                                                     # index_col='time', parse_dates=True)
-    
+            self.weather_hourly_darksky = pd.read_csv(os.path.join(self.archive_folder, 'weather_hourly_darksky.csv'),
+                                                      index_col='time', parse_dates=True)
+
             # load uk_bank_holidays.csv
-            #self.dfholiday = pd.read_csv(os.path.join(self.archive_folder, 'uk_bank_holidays.csv'))
-    
+            self.dfholiday = pd.read_csv(os.path.join(self.archive_folder, 'uk_bank_holidays.csv'))
+            
+            self.logger.info('Starting Chunking Process')
+            # load CSV file to data frame meterconsuptiondata
+            z = 0
+            for chunk in pd.read_csv('housekWh.csv.gz',parse_dates=True, compression='gzip', index_col=[0], chunksize=chunksize):
+                dt=chunk.iloc[-1].name
+                dt=str(dt).replace(' ','_')
+                dt=dt.replace(':','-')
+                dt+='_housekWh.csv'
+                self.logger.info('Creating chunk: ' + str(dt))
             
             return self.meterconsumptiondata
         except OSError as e:
